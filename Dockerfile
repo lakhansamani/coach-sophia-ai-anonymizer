@@ -15,8 +15,8 @@ COPY requirements.txt .
 # Install Python packages
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Download the large spaCy model
-RUN python -m spacy download en_core_web_lg --user
+# Download the large spaCy model (direct pip install is more reliable than spacy download)
+RUN pip install --no-cache-dir --user https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl
 
 # Production stage
 FROM python:3.11-slim
