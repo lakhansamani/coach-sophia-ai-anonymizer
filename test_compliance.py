@@ -145,6 +145,25 @@ test_cases = [
         """,
         "pseudonym": "user123",
         "expected_behavior": "user123 should NOT be anonymized"
+    },
+    {
+        "name": "CRITICAL: Common Words Should NOT Be Detected as Company/Org",
+        "text": """
+        Just sharing a bit about myself—I was born back on 12 March '92, so I've seen tech evolve quite a bit over the years.
+        I work with software and data science.
+        The technology has changed rapidly.
+        """,
+        "expected_behavior": "'tech', 'evolve', 'software', 'technology' should NOT be anonymized as company names",
+        "should_preserve": ["tech", "evolve", "software", "technology", "data science"]
+    },
+    {
+        "name": "Real Company Names SHOULD Be Anonymized",
+        "text": """
+        I work at Google Inc. and previously at Microsoft Corporation.
+        My friend works at Tata Consultancy Services Ltd.
+        """,
+        "expected_behavior": "Real company names with legal suffixes should be anonymized",
+        "should_anonymize": ["Google Inc.", "Microsoft Corporation", "Tata Consultancy Services Ltd."]
     }
 ]
 

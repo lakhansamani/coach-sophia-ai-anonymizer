@@ -139,8 +139,10 @@ FALLBACK_PATTERNS = {
     'USERNAME': r'\b(?:username|user|@|handle|login|uid)[\s:]*[A-Za-z0-9_\.]{4,32}\b',
     
     # Organization/Company Name (ISO 27001 - related party identification)
-    'COMPANY_NAME': r'\b(?:company|organization|corp|ltd|llc|pvt|inc|gmbh|ag|sa|plc)[\s:]*([A-Z][A-Za-z0-9\s&.,\'-]{2,50})?(?=\s|,|$)',
-    'ORGANIZATION_NAME': r'\b([A-Z][A-Za-z\s]+(?:Limited|Ltd|Corporation|Corp|Company|Inc|LLC|LLP|Pvt|Pvt\.|Ltd\.|Inc\.|LLC\.))\b',
+    # IMPORTANT: Must have explicit legal suffixes to avoid false positives
+    # Removed patterns that could match common words like "tech", "seen", etc.
+    'COMPANY_NAME': r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Ltd\.?|Limited|Inc\.?|Incorporated|Corp\.?|Corporation|LLC|LLP|L\.L\.C\.|Pvt\.?\s+Ltd\.?|Private\s+Limited|GmbH|AG|PLC|S\.A\.))\b',
+    'ORGANIZATION_NAME': r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Foundation|Association|Institute|University|College|Hospital|Clinic|Bank|Trust))\b',
     
     # Vehicle Registration/License Plate (HIPAA vehicle identifiers)
     'VEHICLE_REGISTRATION': r'\b[A-Z]{2}[-\s]?\d{2}[-\s][A-Z]{2}[-\s]\d{4}\b',  # Indian format: GJ-01-AB-7788
@@ -165,78 +167,31 @@ FALLBACK_PATTERNS = {
     'COLOMBIAN_CEDULA': r'\b\d{4,10}\b(?=\s|$)',  # 4-10 digits national ID
     'VENEZUELAN_ID': r'\b[VJG]\d{6,9}\b',  # V/J/G prefix + 6-9 digits
     
-    # EUROPE
-    'UK_NINO': r'\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Z]\b',  # National Insurance Number: LL NN NN NN L
-    'UK_NHS_NUMBER': r'\b\d{3}[-\s]?\d{3}[-\s]?\d{4}\b',  # NHS number format
-    'GERMAN_STEUERNUMMER': r'\b\d{2}[-\s]?\d{2,3}[-\s]?\d{3,4}[-\s]?\d{1}\b',  # Tax identification number
-    'FRENCH_INSEE': r'\b\d{1}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}[-\s]?\d{3}\b',  # 13 digits
-    'SPANISH_DNI': r'\b\d{8}-?[A-Z]\b',  # DNI: 8 digits + letter
-    'SPANISH_NIE': r'\b[XYZ]\d{7}-?[A-Z]\b',  # NIE: X/Y/Z + 7 digits + letter
-    'ITALIAN_CF': r'\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b',  # Codice Fiscale: 16 chars
-    'DUTCH_BSN': r'\b\d{9}\b',  # 9-digit citizen service number
-    'BELGIAN_ID': r'\b\d{2}[-\s]?\d{2}[-\s]?\d{2}[-\s]?\d{3}[-\s]?\d{2}\b',  # 12 digits
-    'POLISH_PESEL': r'\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{2}\d{3}[0-9]\b',  # Birth number + 4 digits
-    'PORTUGUESE_NIC': r'\b\d{7}[-\s]?[A-Z]{2}\d\b',  # 7 digits + 2 letters + digit
-    'PORTUGUESE_NIF': r'\b\d{9}\b',  # 9 digits tax number
-    'CZECH_BIRTH_NUMBER': r'\b\d{10}\b',  # 10 digits YYMMDDSSSC
-    'DANISH_CPR': r'\b\d{6}[-]?\d{4}\b',  # 10 digits DDMMYY-SSSS
-    'FINNISH_PIN': r'\b\d{6}[-+A]\d{3}[0-9A-Y]\b',  # 11 chars personal identity code
-    'SWEDISH_PERSONNUMMER': r'\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[-]?\d{4}\b',  # 12 digits
-    'NORWEGIAN_FOEDSELS': r'\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{5}\b',  # 11 digits
-    'AUSTRIAN_PIN': r'\b\d{3}\s?\d{3}\s?\d{3}\b',  # 9 digits social security number
-    'HUNGARIAN_ID': r'\b\d{6}-?[0-9A-Z]{4}\b',  # Birth date + 4 digits
-    'GREEK_ID': r'\b[A-Z][0-9]{7}\b',  # 1 letter + 7 digits or 2 letters + 6 digits
-    'ROMANIAN_CNP': r'\b\d{1}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{6}\b',  # 13 digits GYYMMDDSSSC
-    'BULGARIAN_EGN': r'\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{5}[0-9]\b',  # 10 digits
-    'CROATIAN_OIB': r'\b\d{11}\b',  # 11 digits personal ID number
-    'SLOVAK_BIRTH_NUMBER': r'\b\d{10}\b',  # 10 digits birth number
-    'SLOVENIAN_EMSO': r'\b\d{13}\b',  # 13 digits DDMMYYYRRSSSC
-    'ESTONIA_ID': r'\b\d{11}\b',  # 11 digits ID code
-    'LATVIA_ID': r'\b\d{6}[-]?\d{5}\b',  # 11 digits DDMMYY-NNNNN
-    'LITHUANIA_ID': r'\b\d{11}\b',  # 11 digits personal ID code
-    'ICELAND_KENNITALA': r'\b\d{6}[-]?\d{4}\b',  # 10 digits
-    'IRELAND_PPSN': r'\b\d{7}[A-Z]{1,2}\b',  # Personal public service number
+    # EUROPE - Only patterns with specific format requirements (not just digit counts)
+    'UK_NINO': r'\b[A-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-Z]\b',  # National Insurance: LL NN NN NN L (specific format)
+    'SPANISH_DNI': r'\b\d{8}-?[A-Z]\b',  # DNI: 8 digits + letter (specific format)
+    'SPANISH_NIE': r'\b[XYZ]\d{7}-?[A-Z]\b',  # NIE: X/Y/Z + 7 digits + letter (specific format)
+    'ITALIAN_CF': r'\b[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]\b',  # Codice Fiscale: 16 chars (specific format)
+    'FINNISH_PIN': r'\b\d{6}[-+A]\d{3}[0-9A-Y]\b',  # Personal identity code (specific format)
+    'IRELAND_PPSN': r'\b\d{7}[A-Z]{1,2}\b',  # Personal public service number (specific format)
     
-    # MIDDLE EAST & CENTRAL ASIA
-    'UAE_CIVIL_NUMBER': r'\b784[-]?\d{4}[-]?\d{7}[-]?\d{1}\b',  # 15 digits 784-YYYY-NNNNNNN-C
-    'SAUDI_NATIONAL_ID': r'\b\d{10}\b',  # 10 digits
-    'ISRAELI_ID': r'\b\d{9}\b',  # 9 digits national ID
-    'IRAN_NATIONAL_ID': r'\b\d{3}[-]?\d{6}[-]?\d{1}\b',  # 10 digits XXX-XXXXXX-X
-    'BAHRAIN_ID': r'\b\d{9}\b',  # 9 digits YYMMNNNNC
-    'KUWAIT_CIVIL_ID': r'\b\d{12}\b',  # 12 digits
-    'IRAQ_NATIONAL_ID': r'\b\d{10}[-]?\d{4}[-]?\d{1}\b',  # 15 digits
+    # ASIA - Only patterns with specific format requirements
+    'HONG_KONG_ID': r'\b[A-Z]\d{6}\([0-9A]\)\b',  # Letter + 6 digits + checksum (specific format)
+    'TAIWAN_ID': r'\b[A-Z]\d{9}\b',  # Letter + 9 digits (specific format)
+    'SINGAPORE_NRIC': r'\b[STG]\d{7}[A-Z]\b',  # S/T/G + 7 digits + letter (specific format)
+    'PAKISTAN_CNIC': r'\b\d{5}[-]\d{7}[-]\d{1}\b',  # Requires hyphens: XXXXX-XXXXXXX-X
+    'THAI_ID': r'\b\d{1}[-]\d{4}[-]\d{5}[-]\d{2}[-]\d{1}\b',  # Requires hyphens: N-NNNN-NNNNN-NN-N
     
-    # ASIA
-    'CHINESE_ID': r'\b\d{18}\b',  # 18 digits RRRRRRYYYYMMDDSSSC
-    'CHINESE_ID_OLD': r'\b\d{15}\b',  # 15 digits (old format, still in use)
-    'HONG_KONG_ID': r'\b[A-Z]\d{6}\([0-9A]\)\b',  # Letter + 6 digits + checksum
-    'TAIWAN_ID': r'\b[A-Z]\d{9}\b',  # Letter + 9 digits
-    'JAPANESE_MY_NUMBER': r'\b\d{12}\b',  # 12 digits My Number system
-    'SOUTH_KOREAN_RRN': r'\b\d{6}[-]?\d{7}\b',  # 13 digits YYMMDD-DDDDDDD
-    'SINGAPORE_NRIC': r'\b[STG]\d{7}[A-Z]\b',  # Format: S/T/G + 7 digits + letter
-    'MALAYSIAN_ID': r'\b\d{6}[-]?\d{2}[-]?\d{4}[0-9]\b',  # 12 digits YYMMDD-SS-###G
-    'INDONESIAN_NIK': r'\b\d{16}\b',  # 16 digits national identification number
-    'THAI_ID': r'\b\d{1}[-]?\d{4}[-]?\d{5}[-]?\d{2}[-]?\d{1}\b',  # 13 digits N-NNNN-NNNNN-NN-N
-    'VIETNAMESE_ID': r'\b\d{9,12}\b',  # 9-12 digits national ID
-    'PHILIPPINE_PHILSYS': r'\b\d{2}[-]?\d{4}[-]?\d{3}[-]?\d{3}\b',  # 12 digits
-    'PAKISTAN_CNIC': r'\b\d{5}[-]?\d{7}[-]?\d{1}\b',  # 13 digits XXXXX-XXXXXXX-X
-    'NEPAL_CITIZENSHIP': r'\b[A-Z]{2}[-]?\d{6}\b',  # 2 letters + 6 digits
-    'BANGLADESH_NID': r'\b\d{10,17}\b',  # 10-17 digits
-    'CAMBODIA_ID': r'\b\d{9}\b',  # 9 digits
+    # MIDDLE EAST - Only patterns with specific format requirements
+    'UAE_CIVIL_NUMBER': r'\b784[-]\d{4}[-]\d{7}[-]\d{1}\b',  # Requires 784 prefix and hyphens
     
-    # AFRICA
-    'SOUTH_AFRICAN_ID': r'\b\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[0-9]\d{2}\b',  # 13 digits YYMMDDGSSSCAZ
-    'NIGERIAN_NIN': r'\b\d{11}\b',  # 11 digits national identification number
-    'KENYAN_ID': r'\b\d{6,10}\b',  # Variable length national ID
-    'GHANAIAN_ID': r'\b[A-Z][-]?\d{9,10}\b',  # Letter + 9-10 digits
-    'EGYPTIAN_ID': r'\b\d{14}\b',  # 14 digits
-    'MOROCCAN_ID': r'\b[A-Z]?\d{6,8}\b',  # 6-8 digits national ID
-    'ETHIOPIAN_ID': r'\b\d{9,12}\b',  # 9-12 digits
+    # OCEANIA - Only patterns with specific format requirements
+    'NEW_ZEALAND_NHI': r'\b[A-Z]{3}\d{4}\b',  # 3 letters + 4 digits (specific format)
     
-    # OCEANIA
-    'AUSTRALIAN_TFN': r'\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b',  # 9 digits tax file number
-    'NEW_ZEALAND_IRD': r'\b\d{2}[-\s]?\d{3}[-\s]?\d{3}\b',  # 8 digits IRD number
-    'NEW_ZEALAND_NHI': r'\b[A-Z]{3}\d{4}\b',  # 3 letters + 4 digits health identifier
+    # NOTE: Removed overly broad patterns that match common number sequences:
+    # - Patterns matching just N digits without specific format (e.g., \b\d{9}\b)
+    # - These cause too many false positives (order numbers, tracking IDs, etc.)
+    # - If needed, these should require context keywords like "ID:", "national id", etc.
 }
 
 # Initialize FastAPI app
@@ -575,25 +530,65 @@ GENERIC_NOUNS = {
 # Entity types to EXCLUDE from anonymization
 # These are detected by ML but should NOT be anonymized per user requirement
 EXCLUDED_ENTITY_TYPES = {
+    # ===== DATES (Only birth dates should be anonymized) =====
     'DATE',           # Generic dates (appointment dates, event dates, etc.) - PRESERVE
     'DATE_TIME',      # Generic date/time - PRESERVE
     'TIME',           # Time alone - PRESERVE
     'DATE_FULL',      # Generic full date format - PRESERVE (if detected)
     'DATE_ISO',       # Generic ISO date format - PRESERVE (if detected)
-    'ADMISSION_DATE', # Admission dates - PRESERVE (unless required)
-    'DISCHARGE_DATE', # Discharge dates - PRESERVE (unless required)
-    'DEATH_DATE',     # Death dates - PRESERVE (unless required)
-    'CARDINAL',       # Numbers (spaCy) - PRESERVE
-    'ORDINAL',        # Ordinal numbers (spaCy) - PRESERVE
-    'QUANTITY',       # Quantities (spaCy) - PRESERVE
-    'MONEY',          # Money amounts (spaCy) - PRESERVE
-    'PERCENT',        # Percentages (spaCy) - PRESERVE
-    'NORP',           # Nationalities/religions/political groups (spaCy) - context dependent
-    'EVENT',          # Events (spaCy) - PRESERVE
-    'WORK_OF_ART',    # Titles of works (spaCy) - PRESERVE
-    'LAW',            # Legal documents (spaCy) - PRESERVE
-    'LANGUAGE',       # Languages (spaCy) - PRESERVE
-    'PRODUCT',        # Products (spaCy) - PRESERVE
+    'ADMISSION_DATE', # Admission dates - PRESERVE
+    'DISCHARGE_DATE', # Discharge dates - PRESERVE
+    'DEATH_DATE',     # Death dates - PRESERVE
+    
+    # ===== NUMBERS & QUANTITIES (Important context) =====
+    'CARDINAL',       # Numbers (spaCy) - PRESERVE (e.g., "5 items", "100 users")
+    'ORDINAL',        # Ordinal numbers (spaCy) - PRESERVE (e.g., "1st", "2nd")
+    'QUANTITY',       # Quantities (spaCy) - PRESERVE (e.g., "5 kg", "10 miles")
+    'MONEY',          # Money amounts (spaCy) - PRESERVE (e.g., "$500", "€100")
+    'PERCENT',        # Percentages (spaCy) - PRESERVE (e.g., "50%", "25 percent")
+    
+    # ===== GENERAL ENTITIES (Context-important, not PII) =====
+    'NORP',           # Nationalities/religions/political groups - PRESERVE
+    'EVENT',          # Named events (spaCy) - PRESERVE (e.g., "Olympics", "Conference")
+    'WORK_OF_ART',    # Titles of works (spaCy) - PRESERVE (e.g., book/movie titles)
+    'LAW',            # Legal documents (spaCy) - PRESERVE (e.g., "HIPAA", "GDPR")
+    'LANGUAGE',       # Languages (spaCy) - PRESERVE (e.g., "English", "Spanish")
+    'PRODUCT',        # Products (spaCy) - PRESERVE (e.g., "iPhone", "Windows")
+    'FAC',            # Facilities/buildings (spaCy) - PRESERVE (e.g., "Empire State Building")
+    
+    # ===== ORGANIZATION (Often causes false positives) =====
+    # spaCy's ORG detection often incorrectly flags common words like "tech", "software"
+    # We use specific COMPANY_NAME patterns with legal suffixes instead
+    'ORG',            # Generic organization from spaCy - too many false positives
+    'ORGANIZATION',   # Generic organization - too many false positives
+    
+    # ===== OVERLY BROAD NUMERIC IDs (High false positive risk) =====
+    # These patterns match common number sequences that are usually NOT national IDs
+    'DUTCH_BSN',      # 9 digits - too broad, matches order numbers
+    'ISRAELI_ID',     # 9 digits - too broad
+    'BAHRAIN_ID',     # 9 digits - too broad
+    'CAMBODIA_ID',    # 9 digits - too broad
+    'CROATIAN_OIB',   # 11 digits - too broad
+    'NIGERIAN_NIN',   # 11 digits - too broad
+    'ESTONIA_ID',     # 11 digits - too broad
+    'LITHUANIA_ID',   # 11 digits - too broad
+    'JAPANESE_MY_NUMBER',  # 12 digits - too broad
+    'KUWAIT_CIVIL_ID',     # 12 digits - too broad
+    'CHINESE_ID_OLD',      # 15 digits - too broad
+    'INDONESIAN_NIK',      # 16 digits - too broad
+    'CHINESE_ID',          # 18 digits - too broad
+    'COLOMBIAN_CEDULA',    # 4-10 digits - way too broad
+    'VIETNAMESE_ID',       # 9-12 digits - too broad
+    'KENYAN_ID',           # 6-10 digits - too broad
+    'ETHIOPIAN_ID',        # 9-12 digits - too broad
+    'MOROCCAN_ID',         # 6-8 digits - too broad
+    'BANGLADESH_NID',      # 10-17 digits - too broad
+    'CZECH_BIRTH_NUMBER',  # 10 digits - too broad
+    'SLOVAK_BIRTH_NUMBER', # 10 digits - too broad
+    'SAUDI_NATIONAL_ID',   # 10 digits - too broad
+    'PORTUGUESE_NIF',      # 9 digits - too broad
+    'SLOVENIAN_EMSO',      # 13 digits - too broad
+    'EGYPTIAN_ID',         # 14 digits - too broad
 }
 
 # Entity types that ARE birth-date related and should be anonymized
@@ -609,11 +604,14 @@ def should_anonymize_entity(entity_type: str, entity_text: str = "", context: st
     Determine if an entity should be anonymized based on its type and context.
     
     Rules:
-    1. Excluded entity types are NEVER anonymized
+    1. Excluded entity types are NEVER anonymized (dates, numbers, products, etc.)
     2. Birth date entity types are ALWAYS anonymized
     3. Generic DATE entities are only anonymized if context suggests birth date
+    4. Numeric-only entities need context validation to avoid false positives
+    5. Common words/phrases that look like PII are filtered out
     """
     entity_upper = entity_type.upper()
+    entity_text_clean = entity_text.strip()
     
     # Always anonymize birth date types
     if entity_upper in BIRTH_DATE_ENTITY_TYPES:
@@ -626,13 +624,101 @@ def should_anonymize_entity(entity_type: str, entity_text: str = "", context: st
         context_lower = context.lower()
         entity_lower = entity_text.lower()
         
-        # Check if birth context is within 50 chars of the entity
         for keyword in birth_keywords:
             if keyword in context_lower or keyword in entity_lower:
                 logger.info(f"DATE entity '{entity_text}' has birth context - will anonymize")
                 return True
         
         return False
+    
+    # ===== ADDITIONAL FILTERING TO PREVENT FALSE POSITIVES =====
+    
+    # Filter 1: Skip very short entities (likely false positives)
+    if len(entity_text_clean) < 3:
+        logger.debug(f"Skipping short entity: '{entity_text_clean}'")
+        return False
+    
+    # Filter 2: Skip common words that might be detected as PERSON or ORG
+    COMMON_WORDS_NOT_PII = {
+        # Role words
+        'patient', 'doctor', 'nurse', 'user', 'client', 'customer', 'admin',
+        'manager', 'director', 'ceo', 'cfo', 'cto', 'president', 'chairman',
+        # Days
+        'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+        # Months
+        'january', 'february', 'march', 'april', 'may', 'june', 'july', 
+        'august', 'september', 'october', 'november', 'december',
+        # Time words
+        'morning', 'afternoon', 'evening', 'night', 'today', 'tomorrow', 'yesterday',
+        # Common words
+        'ok', 'okay', 'yes', 'no', 'hello', 'hi', 'bye', 'thanks', 'thank',
+        'please', 'sorry', 'help', 'need', 'want', 'like', 'love', 'hate',
+        'good', 'bad', 'great', 'nice', 'best', 'worst', 'first', 'last',
+        'new', 'old', 'big', 'small', 'high', 'low', 'fast', 'slow',
+        'the', 'and', 'but', 'for', 'with', 'this', 'that', 'these', 'those',
+        # Tech/industry words often misdetected as ORG
+        'tech', 'technology', 'technologies', 'software', 'hardware', 'internet',
+        'web', 'mobile', 'app', 'apps', 'digital', 'data', 'cloud', 'ai', 'ml',
+        'seen', 'see', 'saw', 'evolve', 'evolved', 'evolving',
+        # Common verbs that might be misdetected
+        've', 'ive', "i've", 'have', 'has', 'had', 'been', 'being', 'be',
+    }
+    
+    # Check for common words - applies to PERSON and ORG entities
+    if entity_upper in ['PERSON', 'ORG', 'ORGANIZATION', 'COMPANY_NAME']:
+        # Split entity text into words and check each
+        entity_words = entity_text_clean.lower().split()
+        if all(word in COMMON_WORDS_NOT_PII for word in entity_words):
+            logger.debug(f"Skipping common words detected as {entity_upper}: '{entity_text_clean}'")
+            return False
+        
+        # Also check if the entire text is a common phrase
+        if entity_text_clean.lower() in COMMON_WORDS_NOT_PII:
+            logger.debug(f"Skipping common word detected as {entity_upper}: '{entity_text_clean}'")
+            return False
+        
+        # Check for phrases like "ve seen tech" - common contractions misdetected
+        if entity_text_clean.lower().startswith(('ve ', "i've ", 'ive ')):
+            logger.debug(f"Skipping contraction phrase detected as {entity_upper}: '{entity_text_clean}'")
+            return False
+    
+    # Filter 3: Skip version numbers (e.g., "1.2.3", "v2.0")
+    import re
+    if re.match(r'^v?\d+(\.\d+)+$', entity_text_clean, re.IGNORECASE):
+        logger.debug(f"Skipping version number: '{entity_text_clean}'")
+        return False
+    
+    # Filter 4: Skip simple numeric sequences without context for URL/IP
+    if entity_upper == 'IP_ADDRESS':
+        # Skip localhost, broadcast, and common internal IPs that are not PII
+        non_pii_ips = ['127.0.0.1', '0.0.0.0', '255.255.255.255', '192.168.0.1', '10.0.0.1']
+        if entity_text_clean in non_pii_ips:
+            logger.debug(f"Skipping common non-PII IP: '{entity_text_clean}'")
+            return False
+    
+    # Filter 5: Skip entities that are just numbers without proper context
+    # (Phone numbers, SSNs etc. have specific formats that are already validated by regex)
+    if entity_text_clean.isdigit() and len(entity_text_clean) < 6:
+        logger.debug(f"Skipping short numeric entity: '{entity_text_clean}'")
+        return False
+    
+    # Filter 6: For LOCATION/GPE, only anonymize if it looks like a specific address
+    # General place names (countries, states, cities) should be preserved
+    if entity_upper in ['LOCATION', 'GPE', 'LOC']:
+        # Check if this is a full address (has numbers + street indicators)
+        address_indicators = ['street', 'st.', 'avenue', 'ave.', 'road', 'rd.', 
+                            'boulevard', 'blvd.', 'lane', 'ln.', 'drive', 'dr.',
+                            'apt', 'apartment', 'suite', 'unit', 'floor', '#']
+        context_lower = context.lower()
+        
+        # Only anonymize if it looks like a specific street address
+        has_number = any(c.isdigit() for c in entity_text_clean)
+        has_address_word = any(ind in context_lower for ind in address_indicators)
+        
+        if not (has_number and has_address_word):
+            # This is likely just a city/state/country name - preserve it
+            logger.debug(f"Preserving general location (not address): '{entity_text_clean}'")
+            return False
     
     # All other entity types - anonymize
     return True
@@ -829,14 +915,20 @@ def create_custom_recognizers():
         custom_recognizers.append(username_recognizer)
         
         # Company/Organization Name (ISO 27001 - related entity identification)
+        # IMPORTANT: Removed "Tech", "Technologies" - too common and causes false positives
+        # Only match when followed by legal suffixes like Ltd, Inc, Corp, LLC
         company_patterns = [
-            Pattern(name="company_explicit", regex=r'\b([A-Z][A-Za-z\s&.,\'-]*(?:Limited|Ltd|Corporation|Corp|Company|Inc|LLC|LLP|Pvt|Pvt\.|Ltd\.|Inc\.|LLC\.|Technologies|Tech))\b', score=0.85),
-            Pattern(name="company_pvt_ltd", regex=r'\b([A-Z][A-Za-z\s&.,\'-]+(?:\s+(?:Pvt|Pvt\.|Private)\s+(?:Ltd|Limited)))\b', score=0.9),
+            # Must end with legal entity suffix
+            Pattern(name="company_ltd", regex=r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Ltd\.?|Limited))\b', score=0.9),
+            Pattern(name="company_inc", regex=r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Inc\.?|Incorporated))\b', score=0.9),
+            Pattern(name="company_corp", regex=r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Corp\.?|Corporation))\b', score=0.9),
+            Pattern(name="company_llc", regex=r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:LLC|LLP|L\.L\.C\.))\b', score=0.9),
+            Pattern(name="company_pvt_ltd", regex=r'\b([A-Z][A-Za-z\s&.,\'-]{2,40}\s+(?:Pvt\.?\s+Ltd\.?|Private\s+Limited))\b', score=0.95),
         ]
         company_recognizer = PatternRecognizer(
             supported_entity="COMPANY_NAME",
             patterns=company_patterns,
-            context=["company", "organization", "corporation", "inc", "ltd", "pvt"]
+            context=["company", "organization", "corporation", "employer", "works at", "employed by"]
         )
         custom_recognizers.append(company_recognizer)
         
